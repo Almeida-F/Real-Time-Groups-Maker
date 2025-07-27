@@ -1,0 +1,430 @@
+<script>
+let version = "1.0";
+let templateURL = "https://docs.google.com/spreadsheets/d/125Qu3-4qCYloQd_ljmfDnw1vxe8ZUtB2teZT0VG0hMM/edit?usp=sharing";
+
+let nStudents = 0;
+let nStudentsInClass = 0;
+let classList = [];
+let removeList = [];
+let totalGroups = 0;
+let groupsMakerMenu;
+let className;
+let allClassData = [];
+
+
+function setup() {
+  noCanvas();
+  
+  //info
+  let content = '<p><b>Real-time Groups Maker | version ' + version + '</b><br>Copyright (C) 2025 Felipe Almeida | <a href="https://felipealmeida.ca/">felipealmeida.ca</a><br><em><small>[<a href="https://github.com/Almeida-F/Real-Time-Groups-Maker">source code</a>]</small></em></p><p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p><p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p><p>See the GNU General Public License for more details: <a href="https://www.gnu.org/licenses/gpl-3.0.html">https://www.gnu.org/licenses/gpl-3.0.html</a>.</p>';
+  let infoContent = createDiv(content);
+  infoContent.id("infoContent");
+  let info = createDiv("ⓘ");
+  info.id("info");
+  info.mouseClicked(() => {select('#infoContent').toggleClass('show')});
+
+  
+  //menu
+  groupsMakerMenu = createDiv("☰");
+  groupsMakerMenu.id("groupsMakerMenu");
+  groupsMakerMenu.mouseClicked(toggleMenu);
+  let groupsMakerMenuList = createDiv();
+  groupsMakerMenuList.id("groupsMakerMenuList");
+  
+};
+
+window.addEventListener('load', function() {  
+  google.script.run.withSuccessHandler(previousSheetCheck).getPreviousSheetID();  
+});
+
+function previousSheetCheck(previousSheetID) {
+  console.log('Selected file ID: ' + previousSheetID);
+  if (previousSheetID !== null) { 
+    spreadsheetId = previousSheetID   
+    select('#loading').show();
+    select('#loading').html("loading...");      
+    google.script.run.withSuccessHandler(classPicking).getAllClassData(previousSheetID, false);
+  }
+  else select('#initialPicker').show();
+}
+
+
+function classPicking(classDataFromSheet){
+  allClassData = classDataFromSheet;  
+
+  select('#loading').html("");  
+  select('#groupsMakerMenuList').html("");  
+
+  for (let i = 0; i < allClassData.length; i++) { 
+    let menuOption = createDiv(allClassData[i].name);
+    menuOption.id(allClassData[i].name);
+    menuOption.parent('groupsMakerMenuList');
+    menuOption.mouseClicked(classChanged);
+  
+    let b = createButton(allClassData[i].name);         
+    b.parent('#loading');
+    b.mousePressed(() => launchGroupsMaker(allClassData[i]));    
+  }
+
+  let savedGroupsOption = createDiv(`<a href="https://docs.google.com/spreadsheets/d/${spreadsheetId}" target="_BLANK">Saved Groups</a>`);
+  savedGroupsOption.parent('groupsMakerMenuList');
+  savedGroupsOption.mouseClicked(() => {
+      select('#groupsMakerMenu').elt.click();      
+    });
+  
+  createElement('hr').parent(groupsMakerMenuList);
+  let changeSheetOption = createDiv("Change Sheet");
+  changeSheetOption.parent('groupsMakerMenuList');
+  changeSheetOption.mouseClicked(() => {
+      select('#groupsMakerMenu').elt.click();
+      getOAuthToken();      
+    });
+
+  let templateOption = createDiv(`<a href="${templateURL}" target="_BLANK">Template</a>`);
+  templateOption.parent('groupsMakerMenuList');
+  templateOption.mouseClicked(() => {
+      select('#groupsMakerMenu').elt.click();      
+    });
+}
+
+function launchGroupsMaker(pickedClass) {    
+  select('#loading').hide();  
+  select('#groupmaker').show();
+  select('#groupsMakerMenu').show();
+
+  let setupData = pickedClass.data;
+  className = pickedClass.name
+  nStudents = setupData[1][2];
+  nStudentsInClass = nStudents;  
+  createTitle();  
+
+  classList = createClassList(setupData);
+  showClass(classList);
+
+  calculateGroupNumbers();  
+}
+
+
+//SETUP --------------------------------
+
+function createTitle() {
+  select('#className').html(className);
+  select('#studentCount').html("(" + nStudents + ")");  
+}
+
+function createClassList(setupData) {
+  let studentArray = new Array(nStudents);  
+  for (let i = 0; i < nStudents; i++) {
+    studentArray[i] = {"name": encodeForId(setupData[4 + i][2]).replace(/=/g, ''), "subgroup": false};
+    if (setupData[4 + i][2] == 1)
+      studentArray[i].subgroup = true;
+  }
+  return studentArray  
+}
+
+function showClass(classList){
+  for (i = 0; i < nStudents; i++ ) {
+    s = createDiv(decodeFromId(classList[i].name));
+    s.parent('studentList');
+    s.class('student');
+    s.id(classList[i].name);
+    s.mouseClicked(removeStudent);
+  }
+}
+
+function calculateGroupNumbers() {
+  
+  //nGroups
+  let nGroupsOf4;
+  let nGroupsOf3;
+  let nGroupsOf2;
+
+  let quotient;
+  let remainder;
+
+  //calc groups of 4 (and 3)
+  quotient = getQuotient(nStudents, 4);
+  remainder = getRemainder(nStudents, 4);
+
+  if (remainder !== 0) {
+    nGroupsOf4 = quotient-(3-remainder);
+    nGroupsOf3 = Math.abs(remainder - 4);
+  }
+  else {
+    nGroupsOf4 = quotient;
+    nGroupsOf3 = remainder;
+  }
+  totalGroups = nGroupsOf4 + nGroupsOf3;
+  select('#groupsOf4').html("<h3>" + totalGroups + " total Groups</h3><b>" + nGroupsOf4 + "</b> groups of 4<br><b>" + nGroupsOf3 + "</b> group(s) of 3");
+  document.getElementById('groupsOf4').setAttribute("data-target",nGroupsOf4);
+  document.getElementById('groupsOf4').setAttribute("data-extra", nGroupsOf3);
+
+  //calc groups of 3 (and 4)
+  quotient = getQuotient(nStudents, 3);
+  remainder = getRemainder(nStudents, 3);
+
+  if (remainder !== 0) {
+    nGroupsOf3 = quotient-remainder;
+    nGroupsOf4 = remainder;
+  }
+  else {
+    nGroupsOf3 = quotient;
+    nGroupsOf4 = remainder;
+  }
+
+  totalGroups = nGroupsOf4 + nGroupsOf3;
+  select('#groupsOf3').html("<h3>" + totalGroups + " total Groups</h3><b>" + nGroupsOf3 + "</b> groups of 3<br><b>" + nGroupsOf4 + "</b> group(s) of 4");
+  document.getElementById('groupsOf3').setAttribute("data-target",nGroupsOf3);
+  document.getElementById('groupsOf3').setAttribute("data-extra", nGroupsOf4);
+
+  //calc groups of 3 (and 2)
+  quotient = getQuotient(nStudents, 3);
+  remainder = getRemainder(nStudents, 3);
+
+  if (remainder !== 0) {
+    nGroupsOf3 = quotient-Math.abs(remainder - 2);
+    nGroupsOf2 = Math.abs(remainder-3);
+  }
+  else {
+    nGroupsOf3 = quotient;
+    nGroupsOf2 = remainder;
+  }
+
+  totalGroups = nGroupsOf3 + nGroupsOf2;
+  select('#groupsOf3-2').html("<h3>" + totalGroups + " total Groups</h3><b>" + nGroupsOf3 + "</b> groups of 3<br><b>" + nGroupsOf2 + "</b> group(s) of 2");
+  document.getElementById('groupsOf3-2').setAttribute("data-target",nGroupsOf3);
+  document.getElementById('groupsOf3-2').setAttribute("data-extra", nGroupsOf2);
+
+}
+
+function getQuotient(nStudents, n) {
+  return Math.floor(nStudents/n);
+}
+
+function getRemainder(nStudents, n) {
+  return nStudents%n;
+}
+
+function removeStudent() {
+  if (removeList.indexOf(this.id()) == -1) {
+    removeList.push(this.id());
+    this.style("text-decoration: line-through; color: rgba(0,0,0,0.5);")
+    nStudents -= 1;
+    select('#studentCount').html("(<span style='text-decoration: line-through; color: rgba(0,0,0,0.5);'>" + nStudentsInClass + "</span> " + nStudents + ")");
+  }
+  else {
+    removeList.splice(removeList.indexOf(this.id()), 1);
+    this.style("text-decoration: none; color: rgba(0,0,0,1);")
+    nStudents += 1;
+    select('#studentCount').html("(<span style='text-decoration: line-through; color: rgba(0,0,0,0.5);'>" + nStudentsInClass + "</span> " + nStudents + ")");
+  }
+
+  calculateGroupNumbers();
+}
+
+
+
+//MAKING GROUPS --------------------------------
+
+function createGroups(ele,vals) {
+  select('#groupChoices').hide();
+
+  //remove students on removeList
+  for (i = 0; i < removeList.length; i++) {
+    for (j = 0; j < classList.length; j++) {
+      if (classList[j].name === removeList[i]){
+        select('#' + removeList[i]).remove();
+        classList.splice(j, 1);
+        break;
+      }
+    }
+  }
+
+  //Make empty groups
+  //groups data: nStudentsTargetGroup, nTargetGroups, nStudentsExtraGroup, nExtraGroups 
+  let groupsData = [];
+  groupsData[0] = parseInt(ele.getAttribute("data-target"), 10);
+  groupsData[1] = parseInt(vals.slice(0,1), 10);
+  groupsData[2] = parseInt(ele.getAttribute("data-extra"), 10);
+  groupsData[3] = parseInt(vals.slice(1,2), 10);
+
+  totalGroups = groupsData[0] + groupsData[2] ;
+
+  let groupsArray = [];
+  for (let i = 0; i < groupsData[0]; i++) {
+    groupsArray.push(new Array(groupsData[1]))
+  }
+  for (let j = 0; j < groupsData[2]; j++) {
+    groupsArray.push(new Array(groupsData[3]))
+  }
+
+  let defaultGroupArray = [];
+
+  for (let i = 0; i < nStudents; i++) {
+    defaultGroupArray.push(classList[i].name);
+  }
+
+
+  //Assign default students a slot
+  shuffle(defaultGroupArray, true);
+  while (defaultGroupArray.length > 0){
+    groupBlock: for (let i = 0; i < groupsArray.length; i++) {
+      for (let j = 0; j < groupsArray[i].length; j++) {
+        if(groupsArray[i][j] == null){
+          groupsArray[i][j] = defaultGroupArray[0];
+          defaultGroupArray.splice(0, 1);
+          break groupBlock;
+        }
+      }
+    }
+  }
+  //shuffle each group
+  for (let i = 0; i < groupsArray.length; i++) {
+    shuffle(groupsArray[i], true);
+  }
+
+  
+  //create group boxes
+  let groupLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"];
+
+  for (i = 0; i < groupsData[0]; i++) {
+    g = createDiv();
+    g.parent('groups');
+    g.class('group');
+    gText = "<h2>" + groupLetters[i] + "</h2><ol>";
+    for (j = 0; j < groupsData[1]; j++) {
+      gText +="<li id='" + groupLetters[i] + (j + 1) + "'></li>";
+    }
+    gText += "</ol>";
+    g.html(gText);
+  }
+
+  for (i = groupsData[0]; i < groupsData[0] + groupsData[2]; i++) {
+    g = createDiv();
+    g.parent('groups');
+    g.class('group');
+    gText = "<h2>" + groupLetters[i] + "</h2><ol>";
+    for (j = 0; j < groupsData[3]; j++) {
+      gText +="<li id='" + groupLetters[i] + (j + 1) + "'></li>";
+    }
+    gText += "</ol>";
+    g.html(gText);
+  }
+  
+ //animate students to groups
+  let shuffleTiming = 40;
+  shuffle(classList, true);
+
+  let n = 0;
+  moveStudent(n);
+  function moveStudent(num) {
+    outerBlock: for (let j = 0; j < groupsArray.length; j++) {
+      for (let k = 0; k < groupsArray[j].length; k++) {
+        if(groupsArray[j][k] == classList[num].name){
+          select('#' + groupLetters[j] + (k + 1)).html(decodeFromId(classList[num].name));
+          select('#' + classList[num].name).style("visibility", "hidden");
+          setTimeout(function () {
+            n+= 1; 
+            if (n < classList.length)
+              moveStudent(n)
+            else select('#studentList').style("height: 0px;");
+          }, shuffleTiming);                      
+          break outerBlock;
+        }
+      }      
+    }
+  }
+  //save groups
+  let today = new Date();
+
+  decodedArray = decodeNestedArray(groupsArray);
+
+  //courtesy of chatGPT
+  function decodeNestedArray(nestedArray) { 
+    return nestedArray.map(item => {
+        if (Array.isArray(item)) {
+            // If the item is an array, recursively decode it
+            return decodeNestedArray(item);
+        } else {
+            // Otherwise, decode the Base64 string
+            return decodeFromId(item);
+        }
+    });
+}
+
+  google.script.run.saveGroupsToSheet(spreadsheetId, decodedArray, today.toString(), className);
+
+}
+
+function toggleMenu() {
+let menuList = select('#groupsMakerMenuList');
+  if (this.html() === "☰") {
+    this.html("×")
+    // menuList.show();
+  }
+  else {
+    this.html("☰") 
+    // menuList.hide();
+  }  
+  menuList.toggleClass('show');
+}
+
+function classChanged(el) { 
+  let newClass;
+  if (el.srcElement) {
+    newClass = el.srcElement.id
+    select('#groupsMakerMenu').elt.click();
+  }
+  else 
+    newClass = className;
+
+  //reset everything
+  nStudents = 0;
+  nStudentsInClass = 0;
+  classList = [];
+  removeList = [];
+  totalGroups = 0;  
+  className = '';
+  select('#groups').html("");
+  select('#className').html("");
+  select('#studentList').html("").style('height: ');
+  select('#groupChoices').style("display: flex;");
+
+  //find and relaunch  
+  for (let i = 0; i < allClassData.length; i++) {
+    if (newClass === allClassData[i].name && allClassData[i].name !== "Saved Groups") {
+      launchGroupsMaker(allClassData[i]);
+      break;
+    }
+  }  
+}
+
+//courtesy of chatGPT
+function encodeForId(str) {
+  return Array.from(str).map((char) => {
+    // Get the code point of the character
+    const codePoint = char.codePointAt(0);
+    // Return the character if it's a valid ID character, otherwise encode it
+    return (codePoint >= 48 && codePoint <= 57) || // 0-9
+           (codePoint >= 65 && codePoint <= 90) || // A-Z
+           (codePoint >= 97 && codePoint <= 122) ? // a-z
+           char : `_${codePoint}_`; // Encode as _codePoint_
+  }).join('');
+}
+
+//courtesy of chatGPT
+function decodeFromId(encodedStr) {
+  return encodedStr.replace(/_(\d+)_/g, (match, code) => {
+    return String.fromCodePoint(code); // Convert code point back to character
+  });
+}
+
+
+function getInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) ) + min; //both inclusive
+}
+
+
+</script>
+
+
