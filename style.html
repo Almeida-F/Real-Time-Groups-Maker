@@ -1,0 +1,205 @@
+<style>
+  @font-face {
+  font-family: "Baloo 2 Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 800;
+  src: url(https://cdn.jsdelivr.net/fontsource/fonts/baloo-2:vf@latest/latin-wght-normal.woff2)
+    format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+body {
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: 'Baloo 2 Variable';  
+   font-weight: normal;
+   font-style: normal; 
+}
+
+h3 {
+  margin: 0 0 18px;
+}
+
+#result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+#info {
+  position: fixed;
+  bottom: 30px;
+  right: 12px;
+  color: rgba(0,0,0,0.4);
+  font-style: italic;
+  font-size: 22pt;
+}
+#info:hover {
+  color: dodgerblue;
+  cursor: pointer;
+}
+#infoContent {
+  background-color: white;
+  position: fixed;
+  bottom: 30px;
+  right: 12px;
+  max-width: 450px;
+  color: rgba(0,0,0,0.4);  
+  width: fit-content;    
+  padding: 6px;
+  transform: scaleX(0);
+  transform-origin: right;
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+#infoContent.show {
+  transform: scaleY(1) !important;
+  opacity: 1 !important;
+}
+
+#loading, #initialPicker {  
+  text-align: center;
+  margin-top: 25%;
+}
+
+#loading button, #initialPicker button {
+  font-family: 'Baloo 2 Variable';  
+  display: block;
+  margin: 12px auto;
+  padding: 0px 12px;  
+  border: 2px solid #DDD;
+  border-radius: 24px;
+  font-size: 14pt;
+  background-color: white;
+  color: #333;    
+}
+#loading button:hover, #initialPicker button:hover {
+  border: 2px solid black;
+  cursor: pointer;
+}
+
+#groupsMakerMenu {
+  display: none;
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  font-size: 22pt;
+  text-align: right;
+  font-weight: bold;
+}
+#groupsMakerMenu:hover {
+  color: dodgerblue;
+  cursor: pointer;
+}
+#groupsMakerMenuList {
+  /* display: none; */
+  position: fixed;
+  top: 36px;
+  right: 2px;
+  background-color: white;
+  width: fit-content;  
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 6px;
+  transform: scaleX(0);
+  transform-origin: right;
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+#groupsMakerMenuList.show {
+  transform: scaleY(1) !important;
+  opacity: 1 !important;
+}
+#groupsMakerMenuList div{
+  text-align: center;
+  text-decoration: none;
+  color: #555;
+  font-size: 12pt;
+  font-weight: normal;
+  padding: 4px 4px 0px;
+}
+#groupsMakerMenuList div:hover{
+  color: dodgerblue;
+  cursor: pointer;
+}
+#groupsMakerMenuList hr{
+  margin: 6px 0px;
+}
+#groupsMakerMenuList a{
+  text-decoration: none; 
+  color: inherit;
+}
+
+#regroup {
+  font-size: 12pt;
+  margin: 0 24px;
+  color: rgba(0, 0, 0, 0.4);
+}
+#regroup:hover {
+  cursor: pointer;
+  color: red;
+  font-weight: lighter;
+}
+
+#studentList {
+  display: flex;
+  flex-flow: column wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 216px;
+  border-bottom: 2px solid #DDD;
+  margin-top: 48px;
+  width: 800px;
+  transition: height 0.5s ease; /* Transition for height change */
+}
+
+.student {
+  margin: 12px;
+}
+
+.student:hover {
+  color: red;
+  cursor: pointer;
+}
+
+#groupChoices {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  margin-top: 48px;
+}
+
+.groupsBox {
+  width: 160px;
+  text-align: center;
+  margin: 0 auto;
+  border: 2px solid #DDD;
+  padding: 12px;
+}
+
+.groupsBox:hover {
+  cursor: pointer;
+  border: 2px solid gold;
+}
+
+#groups {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  margin-top: 48px;
+}
+
+.group {
+  width: 160px;
+  text-align: center;
+  margin: 0 auto 12px;
+  border: 2px solid #DDD;
+  padding: 0 12px;
+}
+
+
+
+
+</style>
