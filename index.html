@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     <base target="_top">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js"></script>
+    <?!= include('style'); ?>
+    <?!= include('picker'); ?>
+    <link
+      rel="stylesheet"
+      href="https://ssl.gstatic.com/docs/script/css/add-ons.css"
+    />
+  </head>
+
+  <body>
+    <div id="initialPicker" style="display: none;">
+      <button onclick="getOAuthToken()">Open your spreadsheet</button>
+      <p>&nbsp;</p>
+      <p>Or make a copy of <a href="" target="_BLANK">the template ⧉</a></p>
+
+      <div id="result"></div>
+    </div>
+        
+    <div id = "loading" style="display: none;">loading...</div>
+    <div id="groupmaker" style="display: none;">
+      <div id='classSelect'></div>
+      <h1><span id="className"></span> Groups Maker <span id="studentCount" style="font-size: 10pt; font-weight: normal;">(_)</span> <span id="regroup" onclick="classChanged(this)">⟳</span></h1>
+
+      <div id='studentList'></div>
+    
+      <div id='groupChoices'>
+        <div id='groupsOf4' class='groupsBox' onclick='createGroups(this,"43")'></div>
+        <div id='groupsOf3' class='groupsBox' onclick='createGroups(this,"34")'></div>
+        <div id='groupsOf3-2' class='groupsBox' onclick='createGroups(this,"32")'></div>
+      </div>
+
+      <div id='groups'></div>
+
+    </div>
+    <div style="height: 200px;"></div>    
+
+    
+    <?!= include('js'); ?>
+    <script src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+  </body>
+</html>
